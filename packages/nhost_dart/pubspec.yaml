@@ -2,7 +2,7 @@ name: nhost_dart
 description: Nhost Dart SDK
 version: 2.2.0
 homepage: https://nhost.io
-repository: https://github.com/nhost/nhost-dart/tree/main/packages/nhost_sdk
+repository: https://github.com/nhost/nhost-dart/tree/main/packages/nhost_dart
 issue_tracker: https://github.com/nhost/nhost-dart/issues
 
 environment:
