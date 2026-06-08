@@ -22,12 +22,14 @@ class NhostStorageClient implements HasuraStorageClient {
     required String url,
     UserSession? session,
     http.Client? httpClient,
-  })  : _apiClient = ApiClient(
+  })  : _baseUrl = url.endsWith('/') ? url.substring(0, url.length - 1) : url,
+        _apiClient = ApiClient(
           Uri.parse(url),
           httpClient: httpClient ?? http.Client(),
         ),
         _session = session ?? UserSession();
 
+  final String _baseUrl;
   final ApiClient _apiClient;
   final UserSession _session;
 
@@ -36,6 +38,52 @@ class NhostStorageClient implements HasuraStorageClient {
   void close() {
     _apiClient.close();
   }
+
+  //#region URL helpers
+
+  /// Returns the public URL for a file, optionally with an image [transform].
+  ///
+  /// No HTTP request is made — this is a pure URL construction.
+  /// Use the result directly in [Image.network] or any URL-based widget.
+  ///
+  /// Example:
+  /// ```dart
+  /// Image.network(nhost.storage.publicUrl(fileId));
+  /// Image.network(nhost.storage.imageUrl(fileId, transform: ImageTransform(width: 200)));
+  /// ```
+  String publicUrl(String fileId, {ImageTransformBase? transform}) {
+    final query = transform?.toQueryArguments() ?? {};
+    final uri = Uri.parse('$_baseUrl/files/$fileId');
+    return query.isEmpty
+        ? uri.toString()
+        : uri.replace(queryParameters: query).toString();
+  }
+
+  /// Alias for [publicUrl] with a required [transform] — makes intent clearer
+  /// when building image URLs with resize/blur/quality options.
+  String imageUrl(String fileId, {required ImageTransformBase transform}) {
+    return publicUrl(fileId, transform: transform);
+  }
+
+  //#endregion
+
+  //#region File metadata
+
+  /// Returns [FileMetadata] for [fileId] without downloading the file contents.
+  ///
+  /// Throws an [ApiException] if the file does not exist or access is denied.
+  Future<FileMetadata> getFileMetadata(String fileId) async {
+    return _apiClient.get(
+      '/files/$fileId',
+      headers: {
+        ..._session.authenticationHeaders,
+        'X-Nhost-File-Metadata-Only': 'true',
+      },
+      responseDeserializer: FileMetadata.fromJson,
+    );
+  }
+
+  //#endregion
 
   /// Uploads a file to the backend from a list of bytes.
   ///

@@ -23,9 +23,19 @@ export 'package:nhost_sdk/nhost_sdk.dart'
         UnsubscribeDelegate,
         AuthStore,
         DeanonymizeOptions,
-        DeanonymizeSignInMethod;
+        DeanonymizeSignInMethod,
+        UploadProgressCallback;
 export 'package:nhost_storage_dart/nhost_storage_dart.dart'
-    show NhostStorageClient, ImageCornerRadius, ImageTransform;
+    show
+        NhostStorageClient,
+        FileMetadata,
+        FileData,
+        UploadFileMetadata,
+        UploadFilesResponse,
+        PresignedUrl,
+        ImageTransform,
+        ImageCornerRadius,
+        ErrorResponseWithProcessedFiles;
 export 'package:nhost_auth_dart/nhost_auth_dart.dart' show NhostAuthClient;
 export 'package:nhost_functions_dart/nhost_functions_dart.dart'
     show NhostFunctionsClient;
