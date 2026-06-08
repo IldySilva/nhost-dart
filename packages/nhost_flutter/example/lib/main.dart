@@ -2,7 +2,8 @@
 // Demonstrates every P1 Flutter Experience API:
 //   Nhost.initialize(), NhostAuthGate, NhostAuthStateBuilder,
 //   NhostSignedIn/Out, NhostUserBuilder, authStateChanges, authStateListenable
-//   sign-in, register, anonymous sign-in, forgot password, change password
+//   sign-in (typed SignInResult), register, anonymous sign-in,
+//   forgot password, change password, MFA
 import 'package:flutter/material.dart';
 import 'package:nhost_flutter/nhost_flutter.dart';
 
@@ -74,10 +75,41 @@ class _SignInScreenState extends State<_SignInScreen> {
   Future<void> _signIn() async {
     setState(() => _loading = true);
     try {
-      await Nhost.instance.auth.signInEmailPassword(
+      // signIn() returns a typed SignInResult instead of a raw AuthResponse,
+      // so every outcome is handled explicitly — no more nullable field guessing.
+      final result = await Nhost.instance.auth.signIn(
         email: _email.text,
         password: _password.text,
       );
+
+      if (!mounted) return;
+
+      switch (result) {
+        case SignInSuccess():
+          // Auth state updates automatically via the listener — nothing to do.
+          break;
+
+        case SignInNeedsMfa(:final ticket):
+          // Navigate to the MFA screen passing the ticket from the server.
+          await Navigator.of(context).push<void>(
+            MaterialPageRoute(builder: (_) => _MfaScreen(ticket: ticket)),
+          );
+
+        case SignInNeedsEmailVerification():
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text(
+                'Check your inbox and verify your email before signing in.',
+              ),
+              action: SnackBarAction(
+                label: 'Resend',
+                onPressed: () => Nhost.instance.auth.sendVerificationEmail(
+                  email: _email.text,
+                ),
+              ),
+            ),
+          );
+      }
     } on ApiException catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -177,6 +209,93 @@ class _SignInScreenState extends State<_SignInScreen> {
             TextButton(
               onPressed: _goToRegister,
               child: const Text("Don't have an account? Register"),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// MFA — enter TOTP code to complete sign-in
+// ---------------------------------------------------------------------------
+
+class _MfaScreen extends StatefulWidget {
+  const _MfaScreen({required this.ticket});
+  final String ticket;
+
+  @override
+  State<_MfaScreen> createState() => _MfaScreenState();
+}
+
+class _MfaScreenState extends State<_MfaScreen> {
+  final _otp = TextEditingController();
+  bool _loading = false;
+
+  Future<void> _verify() async {
+    setState(() => _loading = true);
+    try {
+      await Nhost.instance.auth.completeMfaSignIn(
+        otp: _otp.text.trim(),
+        ticket: widget.ticket,
+      );
+      if (!mounted) return;
+      Navigator.of(context).pop();
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Invalid code: ${e.responseBody}')),
+      );
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  @override
+  void dispose() {
+    _otp.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Two-factor authentication')),
+      body: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.lock_clock_outlined, size: 48, color: Colors.indigo),
+            const SizedBox(height: 16),
+            const Text(
+              'Enter the 6-digit code from your authenticator app.',
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            TextField(
+              controller: _otp,
+              decoration: const InputDecoration(
+                labelText: 'Authentication code',
+                border: OutlineInputBorder(),
+              ),
+              keyboardType: TextInputType.number,
+              maxLength: 6,
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton(
+                onPressed: _loading ? null : _verify,
+                child: _loading
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Text('Verify'),
+              ),
             ),
           ],
         ),

@@ -1,6 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nhost_flutter/nhost_flutter.dart';
-import 'package:nhost_sdk/nhost_sdk.dart';
 
 void main() {
   group('AuthState sealed classes', () {
