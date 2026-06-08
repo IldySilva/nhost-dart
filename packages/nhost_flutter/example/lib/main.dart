@@ -110,10 +110,15 @@ class _SignInScreenState extends State<_SignInScreen> {
             ),
           );
       }
+    } on NhostNetworkException {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No connection. Check your internet and try again.')),
+      );
     } on ApiException catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Sign in failed: ${e.responseBody}')),
+        SnackBar(content: Text(e.errorMessage ?? 'Sign in failed')),
       );
     } finally {
       if (mounted) setState(() => _loading = false);
@@ -124,10 +129,15 @@ class _SignInScreenState extends State<_SignInScreen> {
     setState(() => _loading = true);
     try {
       await Nhost.instance.auth.signInAnonymous(null, null, null);
+    } on NhostNetworkException {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No connection. Check your internet and try again.')),
+      );
     } on ApiException catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Anonymous sign in failed: ${e.responseBody}')),
+        SnackBar(content: Text(e.errorMessage ?? 'Anonymous sign in failed')),
       );
     } finally {
       if (mounted) setState(() => _loading = false);
@@ -245,7 +255,7 @@ class _MfaScreenState extends State<_MfaScreen> {
     } on ApiException catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Invalid code: ${e.responseBody}')),
+        SnackBar(content: Text(e.errorMessage ?? 'Invalid code')),
       );
     } finally {
       if (mounted) setState(() => _loading = false);
@@ -339,7 +349,7 @@ class _RegisterScreenState extends State<_RegisterScreen> {
     } on ApiException catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Registration failed: ${e.responseBody}')),
+        SnackBar(content: Text(e.errorMessage ?? 'Registration failed')),
       );
     } finally {
       if (mounted) setState(() => _loading = false);
@@ -439,7 +449,7 @@ class _ForgotPasswordScreenState extends State<_ForgotPasswordScreen> {
     } on ApiException catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed: ${e.responseBody}')),
+        SnackBar(content: Text(e.errorMessage ?? 'Request failed')),
       );
     } finally {
       if (mounted) setState(() => _loading = false);
@@ -680,7 +690,7 @@ class _ConvertAnonymousScreenState extends State<_ConvertAnonymousScreen> {
     } on ApiException catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Upgrade failed: ${e.responseBody}')),
+        SnackBar(content: Text(e.errorMessage ?? 'Upgrade failed')),
       );
     } finally {
       if (mounted) setState(() => _loading = false);
@@ -775,7 +785,7 @@ class _ChangePasswordScreenState extends State<_ChangePasswordScreen> {
     } on ApiException catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed: ${e.responseBody}')),
+        SnackBar(content: Text(e.errorMessage ?? 'Request failed')),
       );
     } finally {
       if (mounted) setState(() => _loading = false);

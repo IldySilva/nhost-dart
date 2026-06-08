@@ -11,6 +11,8 @@ import 'src/logging.dart';
 export 'package:nhost_sdk/nhost_sdk.dart'
     show
         ApiException,
+        NhostException,
+        NhostNetworkException,
         Session,
         User,
         AuthResponse,
